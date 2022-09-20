@@ -9,7 +9,7 @@ import {
   StatusBar,
   Keyboard,
   KeyboardAvoidingView,
-  BackHandler,
+ScrollView,
 
   Modal,
 } from "react-native";
@@ -19,10 +19,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {  Searchbar, TextInput } from "react-native-paper";
 import { FAB, Button } from "react-native-paper";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { ScrollView } from "react-native-gesture-handler";
+
 import { AntDesign, FontAwesome } from "@expo/vector-icons";
 
-const Pending = ({ navigation }) => {
+function Home ({ navigation })  {
+  // const [filteredDataSource, setFilteredDataSource] = useState([]);
+
   const [todos, setTodos] = useState([]);
   const [textInput, setTextInput] = useState("");
   const [search, setSearch] = useState("");
@@ -30,32 +32,31 @@ const Pending = ({ navigation }) => {
   // field in api but which in post method  for standard listitem call mostly as get method but in api it is post method
   // const [title, setTitle] = useState("");
 
-    useCallback(() => {
-      const onBackPress = () => {
-        Alert.alert("TRAS", "Are you sure you want to Exit app? ", [
-          {
-            text: "Cancel",
-            onPress: () => null,
-            style: "cancel",
-          },
-          { text: "YES", onPress: () => BackHandler.exitApp() },
-        ]);
-        return true;
-      };
-
-      BackHandler.addEventListener("hardwareBackPress", onBackPress);
-
-      return () =>
-        BackHandler.removeEventListener("hardwareBackPress", onBackPress);
-    }, [])
-
+   
   useEffect(() => {
-    Get();
+   
+    getItem();
+    saveItem(todos);
+    
   }, []);
 
-  useEffect(() => {
-    Save(todos);
-  }, [todos]);
+
+//  if you want search please unhide
+  //  const searchFilterFunction = (text) => {
+  //   if (text) {
+  //     const newData = todos.filter(function (item) {
+  //       const itemData = item.task ? item.task.toUpperCase() : "".toUpperCase();
+  //       const textData = text.toUpperCase();
+  //       return itemData.indexOf(textData) > -1;
+  //     });
+  //     setFilteredDataSource(newData);
+  //     setSearch(text);
+  //   } else {
+  //     setFilteredDataSource(todos);
+  //     setSearch(text);
+  //   }
+  // };
+
 
   // post method for call list why i didn't used mention in mail
   // const UpdateFamily = () => {
@@ -84,7 +85,7 @@ const Pending = ({ navigation }) => {
   //     });
   // };
 
-  const Add = () => {
+  const addItem = () => {
     Keyboard.dismiss();
     if (textInput == "") {
       Alert.alert("Error", "Please write something");
@@ -96,11 +97,11 @@ const Pending = ({ navigation }) => {
       };
       setTodos([...todos, newData]);
       setTextInput("");
-      Save([...todos, newData]);
+      saveItem([...todos, newData]);
     }
   };
 
-  const Save = async (todos) => {
+  const saveItem = async (todos) => {
     try {
       const stringifyTodos = JSON.stringify(todos);
       await AsyncStorage.setItem("todos", stringifyTodos);
@@ -109,11 +110,13 @@ const Pending = ({ navigation }) => {
     }
   };
 
-  const Get = async () => {
+  const getItem = async () => {
     try {
-      const todos = await AsyncStorage.getItem("todos");
-      if (todos != null) {
-        setTodos(JSON.parse(todos));
+      const getData = await AsyncStorage.getItem("todos");
+      if (getData != null) {
+        setTodos(JSON.parse(getData));
+        // whole data to searchfunction
+        // setFilteredDataSource(JSON.parse(getData));
       }
     } catch (error) {
       console.log(error);
@@ -136,7 +139,7 @@ const Pending = ({ navigation }) => {
         text: "Yes",
         onPress: () => {
           setTodos(newTodosItem);
-          Save(newTodosItem);
+          saveItem(newTodosItem);
         },
       },
       {
@@ -144,11 +147,26 @@ const Pending = ({ navigation }) => {
       },
     ]);
   };
-
+  const ListEmptyComponent = () => {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 20,
+        }}
+      >
+        <Text style={{ fontSize: 15, fontWeight: "700", color: "red" }}>
+     Add Items to display
+        </Text>
+      </View>
+    );
+  };
 
   const ListItem = ({ todo }) => {
     return (
-      <ScrollView>
+    
         <View
           style={{
             backgroundColor: "white",
@@ -192,7 +210,7 @@ const Pending = ({ navigation }) => {
           )}
           <Icon name="dots-three-vertical" size={25} color="silver"></Icon>
         </View>
-      </ScrollView>
+   
     );
   };
   return (
@@ -209,7 +227,8 @@ const Pending = ({ navigation }) => {
         <Searchbar style={{backgroundColor:'#E8EAED'}}
           value={search}
           placeholderTextColor="#007bff"
-          onChangeText={(text) => setSearch(text)}
+          onChangeText={setSearch}
+          // onChangeText={searchFilterFunction}
         />
       </View>
 
@@ -231,14 +250,17 @@ const Pending = ({ navigation }) => {
           Task
         </Text>
       </View>
-
+      <ScrollView >
       <View>
         <FlatList
           contentContainerStyle={{ padding: 10 }}
-          data={todos}
+          data={todos.sort((a, b) => a.task.localeCompare(b.task))}
           renderItem={({ item }) => <ListItem todo={item} />}
+          ListEmptyComponent={ListEmptyComponent}
+      
         />
       </View>
+      </ScrollView>
 
       <View
         style={{
@@ -276,7 +298,7 @@ const Pending = ({ navigation }) => {
         <TouchableOpacity
           style={{ marginBottom: 5, padding: 5 }}
           activeOpacity={0.7}
-          onPress={Add}
+          onPress={()=>addItem()}
         >
           <FAB
             small
@@ -291,4 +313,4 @@ const Pending = ({ navigation }) => {
   );
 };
 
-export default Pending;
+export default Home;
